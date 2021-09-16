@@ -21,6 +21,13 @@ def get_args():
                         type=str,
                         required=True)
 
+    parser.add_argument('-t',
+                        '--transformation',
+                        help='The transformation matrix',
+                        metavar='transformation',
+                        type=str,
+                        required=True)
+
     parser.add_argument('-p',
                         '--plants',
                         help='Path to the csv that contains the plant detections.',
@@ -32,6 +39,6 @@ def get_args():
 
 def main():
     args = get_args()
-    postprocess.postprocess_single_pass(args.input,args.output,args.plants)
+    postprocess.postprocess_single_pass(args.input,args.output,args.plants,args.transformation)
 
 main()
