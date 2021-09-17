@@ -44,7 +44,6 @@ def paint_plants(pcd,plants):
     ratios = (points[:,2]-mins[2])/(maxs[2]-mins[2])
     ratios = np.vstack((ratios,ratios,ratios)).T
     colors = np.array((ratios*color1+(1-ratios)*color2))
-    
 
     min_x,min_y = utm_to_latlon(mins[0],mins[1])
     max_x,max_y = utm_to_latlon(maxs[0],maxs[1])
