@@ -69,6 +69,10 @@ def load_plants(plants_path):
         for rows in reader:
             if rows[0] == "date":
                 continue
+
+            if float(rows[1])<0.95:
+                continue
+
             p = [float(rows[4]),float(rows[5])]
             plants.append(p)
     
