@@ -16,7 +16,7 @@ def get_args():
     
     parser.add_argument('-o',
                         '--output',
-                        help='Path to the geocorrection directory where the results for the given single pass will be save. Within the geocorrection directory, 7 sub-directories will be created (if not exist) for east, west, merged and downsampled of them as well as the updated metadata.',
+                        help='Path to the geocorrection directory where the results for the given single pass will be save. Within the geocorrection directory, 6 sub-directories will be created (if not exist) for east, west, merged and downsampled of them.',
                         metavar='output',
                         type=str,
                         required=True)
