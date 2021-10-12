@@ -2,31 +2,46 @@ import os
 import json
 from utils import *
 
-def get_path_dict(path,outpath):
+def get_path_dict(path,outpath,folder_name):
     if path[-1] == '/':
         path = path[:-1]
     
-    pass_id = os.listdir(path)[0].split('/')[-1].split('_')[0]
-    folder_name = path.split('/')[-1]
-    
-    if folder_name not in outpath:
-        outpath = os.path.join(outpath,folder_name)
-        if not os.path.exists(outpath):
-            os.mkdir(outpath)
+    pass_id = os.listdir(os.path.join(path,"east",folder_name))[0].split('/')[-1].split('_')[0]
 
-    aligned_ply_path = os.path.join(path,f"{pass_id}__Top-heading-aligned.ply")
-    aligned_downsampled_ply_path = os.path.join(path,f"{pass_id}__Top-heading-aligned-downsampled.ply")
-    aligned_east_path = os.path.join(path,f"{pass_id}__Top-heading-aligned_east.ply")
-    aligned_west_path = os.path.join(path,f"{pass_id}__Top-heading-aligned_west.ply")
-    aligned_east_downsampled_path = os.path.join(path,f"{pass_id}__Top-heading-aligned_east_downsampled.ply")
-    aligned_west_downsampled_path = os.path.join(path,f"{pass_id}__Top-heading-aligned_west_downsampled.ply")
+    east_path = os.path.join(path,"east",folder_name)
+    east_downsampled_path = os.path.join(path,"east_downsampled",folder_name)
+    west_path = os.path.join(path,"west",folder_name)
+    west_downsampled_path = os.path.join(path,"west_downsampled",folder_name)
+    merged_path = os.path.join(path,"merged",folder_name)
+    merged_downsampled_path = os.path.join(path,"merged_downsampled",folder_name)
 
-    geocorrected_ply_path = os.path.join(outpath,f"{pass_id}__Top-heading-geocorrected.ply")
-    geocorrected_downsampled_ply_path = os.path.join(outpath,f"{pass_id}__Top-heading-geocorrected-downsampled.ply")
-    geocorrected_east_path = os.path.join(outpath,f"{pass_id}__Top-heading-geocorrected_east.ply")
-    geocorrected_west_path = os.path.join(outpath,f"{pass_id}__Top-heading-geocorrected_west.ply")
-    geocorrected_east_downsampled_path = os.path.join(outpath,f"{pass_id}__Top-heading-geocorrected_east_downsampled.ply")
-    geocorrected_west_downsampled_path = os.path.join(outpath,f"{pass_id}__Top-heading-geocorrected_west_downsampled.ply")
+    east_outpath = os.path.join(outpath,"east",folder_name)
+    east_downsampled_outpath = os.path.join(outpath,"east_downsampled",folder_name)
+    west_outpath = os.path.join(outpath,"west",folder_name)
+    west_downsampled_outpath = os.path.join(outpath,"west_downsampled",folder_name)
+    merged_outpath = os.path.join(outpath,"merged",folder_name)
+    merged_downsampled_outpath = os.path.join(outpath,"merged_downsampled",folder_name)
+
+    os.makedirs(east_outpath,exist_ok=True)
+    os.makedirs(east_downsampled_outpath,exist_ok=True)
+    os.makedirs(west_outpath,exist_ok=True)
+    os.makedirs(west_downsampled_outpath,exist_ok=True)
+    os.makedirs(merged_outpath,exist_ok=True)
+    os.makedirs(merged_downsampled_outpath,exist_ok=True)
+
+    aligned_ply_path = os.path.join(merged_path,f"{pass_id}__Top-heading-merged.ply")
+    aligned_downsampled_ply_path = os.path.join(merged_downsampled_path,f"{pass_id}__Top-heading-merged.ply")
+    aligned_east_path = os.path.join(east_path,f"{pass_id}__Top-heading-east.ply")
+    aligned_west_path = os.path.join(west_path,f"{pass_id}__Top-heading-west.ply")
+    aligned_east_downsampled_path = os.path.join(east_downsampled_path,f"{pass_id}__Top-heading-east.ply")
+    aligned_west_downsampled_path = os.path.join(west_downsampled_path,f"{pass_id}__Top-heading-west.ply")
+
+    geocorrected_east_path = os.path.join(east_outpath,f"{pass_id}__Top-heading-east.ply")
+    geocorrected_west_path = os.path.join(west_outpath,f"{pass_id}__Top-heading-west.ply")
+    geocorrected_east_downsampled_path = os.path.join(east_downsampled_outpath,f"{pass_id}__Top-heading-east.ply")
+    geocorrected_west_downsampled_path = os.path.join(west_downsampled_outpath,f"{pass_id}__Top-heading-west.ply")
+    geocorrected_ply_path = os.path.join(merged_outpath,f"{pass_id}__Top-heading-merged.ply")
+    geocorrected_downsampled_ply_path = os.path.join(merged_downsampled_outpath,f"{pass_id}__Top-heading-merged.ply")
 
     path_dict = {}
     path_dict['aligned_ply_path'] = aligned_ply_path
@@ -48,39 +63,48 @@ def get_path_dict(path,outpath):
 
     return path_dict
 
-def postprocess_single_pass(path,outpath,plant_path,transformation):
-    # T = np.array([[9.83721793e-04,5.35915882e-06,4.08975685e+05],[2.80464642e-06,9.36477094e-04,3.65996821e+06]])
-    T = np.array(eval(transformation))
+def postprocess_single_pass(path,outpath,folder,plant_path,transformation,season,current_date,lid_path):
+    with open(transformation,'r') as f:
+        tr = json.load(f)
 
-    plants = load_plants(plant_path)
-    path_dict = get_path_dict(path,outpath)
+    T = np.array(tr['transformation'])
+
+    plants = load_plants(plant_path,season,current_date)
+    lids = load_lids(lid_path)
+    path_dict = get_path_dict(path,outpath,folder)
     
     pcd = load_pcd(path_dict['aligned_downsampled_ply_path'])
     transformed_pcd = transform_pcd(pcd,T)
     painted_pcd = paint_plants(transformed_pcd,plants)
+    painted_pcd = paint_lids(painted_pcd,lids)
     save_pcd(painted_pcd,path_dict['geocorrected_downsampled_ply_path'])
 
     pcd = load_pcd(path_dict['aligned_ply_path'])
     transformed_pcd = transform_pcd(pcd,T)
     painted_pcd = paint_plants(transformed_pcd,plants)
+    painted_pcd = paint_lids(painted_pcd,lids)
     save_pcd(painted_pcd,path_dict['geocorrected_ply_path'])
 
     pcd = load_pcd(path_dict['aligned_east_path'])
     transformed_pcd = transform_pcd(pcd,T)
     painted_pcd = paint_plants(transformed_pcd,plants)
+    painted_pcd = paint_lids(painted_pcd,lids)
     save_pcd(painted_pcd,path_dict['geocorrected_east_path'])
 
     pcd = load_pcd(path_dict['aligned_west_path'])
     transformed_pcd = transform_pcd(pcd,T)
     painted_pcd = paint_plants(transformed_pcd,plants)
+    painted_pcd = paint_lids(painted_pcd,lids)
     save_pcd(painted_pcd,path_dict['geocorrected_west_path'])
 
     pcd = load_pcd(path_dict['aligned_east_downsampled_path'])
     transformed_pcd = transform_pcd(pcd,T)
     painted_pcd = paint_plants(transformed_pcd,plants)
+    painted_pcd = paint_lids(painted_pcd,lids)
     save_pcd(painted_pcd,path_dict['geocorrected_east_downsampled_path'])
 
     pcd = load_pcd(path_dict['aligned_west_downsampled_path'])
     transformed_pcd = transform_pcd(pcd,T)
     painted_pcd = paint_plants(transformed_pcd,plants)
+    painted_pcd = paint_lids(painted_pcd,lids)
     save_pcd(painted_pcd,path_dict['geocorrected_west_downsampled_path'])

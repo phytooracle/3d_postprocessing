@@ -1,6 +1,7 @@
 import numpy as np
 import csv
 import open3d as o3d
+from datetime import datetime
 from pyproj import Proj,transform
 proj_4326 = Proj(init='epsg:4326')
 proj_2151 = Proj(init='epsg:2152')
@@ -30,6 +31,39 @@ def transform_pcd(pcd,T):
 
 def save_pcd(pcd,path):
     o3d.io.write_point_cloud(path, pcd)
+
+def load_lids(path):
+    lids = {}
+    with open(path, mode='r') as infile:
+        reader = csv.reader(infile)
+        for rows in reader:
+            p = [float(rows[1]),float(rows[2])]
+            p = latlon_to_utm(p[1],p[0])
+            lids[int(float(rows[0]))] = [p[0],p[1]]
+    return lids
+
+def paint_lids(pcd,lids):
+    points = np.array(pcd.points)
+
+    mins = np.min(points,axis=0)
+    maxs = np.max(points,axis=0)
+
+    min_x,min_y = mins[0],mins[1]
+    max_x,max_y = maxs[0],maxs[1]
+
+    tree = o3d.geometry.KDTreeFlann(pcd)
+    colors = np.array(pcd.colors)
+
+    for l in lids:
+        p = lids[l]
+        if p[0]>min_x and p[0]<max_x and p[1]>min_y and p[1]<max_y:
+            utm_p = p
+            [k, idx, _] = tree.search_radius_vector_3d((utm_p[0],utm_p[1],(mins[2]+maxs[2])/2),0.3)
+            colors[idx] = [0,0,1]
+
+    pcd.colors = o3d.utility.Vector3dVector(colors)
+
+    return pcd
 
 def paint_plants(pcd,plants):
     color1 = (255/255, 255/255, 0)
@@ -61,19 +95,54 @@ def paint_plants(pcd,plants):
     return pcd
     
 
-def load_plants(plants_path):
-    plants=[]
+def keep_closest_date_plants(all_plants,date):
+    all_dates = [datetime(int(k.split('-')[0]),int(k.split('-')[1]),int(k.split('-')[2])) for k in all_plants]
+    current_date = datetime(int(date.split('-')[0]),int(date.split('-')[1]),int(date.split('-')[2]))
 
-    with open(plants_path, mode='r') as infile:
-        reader = csv.reader(infile)
-        for rows in reader:
-            if rows[0] == "date":
-                continue
+    res = min(all_dates, key=lambda sub: abs(sub - current_date))
 
-            if float(rows[1])<0.95:
-                continue
+    return all_plants[res.strftime("%Y-%m-%d")]
+    
 
-            p = [float(rows[4]),float(rows[5])]
-            plants.append(p)
+def load_plants(plants_path,season,current_date):
+
+    if season == 10:
+        
+        all_plants = {}
+        with open(plants_path, mode='r' ,encoding="utf-8") as infile:
+            reader = csv.reader(infile)
+            for rows in reader:
+                if rows[2] == "date":
+                    continue
+                
+                if rows[2] == "2020-03-02":
+                    continue
+                
+                p = [float(rows[6]),float(rows[7])]
+                date = rows[2]
+
+                if date not in all_plants:
+                    all_plants[date] = [p]
+                else:
+                    all_plants[date].append(p)
+
+    elif season == 12:
+
+        all_plants = {}
+        with open(plants_path, mode='r') as infile:
+            reader = csv.reader(infile)
+            for rows in reader:
+                if rows[2] == "date":
+                    continue
+
+                p = [float(rows[5]),float(rows[6])]
+                date = rows[2]
+
+                if date not in all_plants:
+                    all_plants[date] = [p]
+                else:
+                    all_plants[date].append(p)
+
+    plants = keep_closest_date_plants(all_plants,current_date)
     
     return plants
