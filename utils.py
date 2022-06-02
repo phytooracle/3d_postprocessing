@@ -1,3 +1,4 @@
+import pdb
 import numpy as np
 import csv
 import open3d as o3d
@@ -96,6 +97,7 @@ def paint_plants(pcd,plants):
     
 
 def keep_closest_date_plants(all_plants,date):
+
     all_dates = [datetime(int(k.split('-')[0]),int(k.split('-')[1]),int(k.split('-')[2])) for k in all_plants]
     current_date = datetime(int(date.split('-')[0]),int(date.split('-')[1]),int(date.split('-')[2]))
 
@@ -126,7 +128,7 @@ def load_plants(plants_path,season,current_date):
                 else:
                     all_plants[date].append(p)
 
-    elif season == 12:
+    else:
 
         all_plants = {}
         with open(plants_path, mode='r') as infile:
