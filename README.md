@@ -4,7 +4,7 @@ A repository for geo-correcting the ply files after they are merged and aligned 
 The input CSV should have columns in the following order:
 - Unnamed: 0
 - plant_name
-- date (Must be in format <YYYY-MM-DD>)
+- date (Must be in format "<YYYY-MM-DD>")
 - treatment
 - plot
 - genotype
