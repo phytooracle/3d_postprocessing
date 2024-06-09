@@ -1,4 +1,4 @@
-# 3d_postprocessing
+# 3D Postprocessing
 This script corrects geocoordinates of PLY files after they are merged and aligned and GCPs have been selected by the users manually. 
 
 ## Inputs
